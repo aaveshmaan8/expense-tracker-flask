@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Login | Expense Tracker</title>
 
@@ -29,17 +29,42 @@
         {% endif %}
         {% endwith %}
 
-        <form method="POST">
-            <label>Username</label>
-            <input type="text" name="username" required>
+        <form method="POST" onsubmit="handleSubmit()">
 
+            <!-- Username -->
+            <label>Username</label>
+            <input type="text"
+                   name="username"
+                   required
+                   autocomplete="username">
+
+            <!-- Password -->
             <label>Password</label>
             <div class="password-wrapper">
-                <input type="password" name="password" id="password" required>
-                <i class="fa-solid fa-eye toggle-password" id="toggleIcon"></i>
+                <input type="password"
+                       name="password"
+                       id="password"
+                       required
+                       autocomplete="current-password"
+                       onkeyup="checkCaps(event)">
+                <i class="fa-solid fa-eye toggle-password"
+                   id="toggleIcon"
+                   onclick="togglePassword()"></i>
             </div>
 
-            <button type="submit" class="auth-btn">Login</button>
+            <!-- Caps Lock Warning -->
+            <div id="capsWarning"
+                 class="password-match error"
+                 style="display:none;">
+                ⚠ Caps Lock is ON
+            </div>
+
+            <!-- Submit -->
+            <button type="submit"
+                    class="auth-btn"
+                    id="loginBtn">
+                Login
+            </button>
         </form>
 
         <div class="auth-footer">
@@ -50,18 +75,30 @@
     </div>
 </div>
 
-<!-- ================= SCRIPT ================= -->
+<!-- ================= SCRIPTS ================= -->
 <script>
-    const passwordInput = document.getElementById("password");
-    const toggleIcon = document.getElementById("toggleIcon");
+const passwordInput = document.getElementById("password");
+const toggleIcon = document.getElementById("toggleIcon");
+const loginBtn = document.getElementById("loginBtn");
 
-    toggleIcon.addEventListener("click", () => {
-        const isHidden = passwordInput.type === "password";
+function togglePassword() {
+    const isHidden = passwordInput.type === "password";
+    passwordInput.type = isHidden ? "text" : "password";
 
-        passwordInput.type = isHidden ? "text" : "password";
-        toggleIcon.classList.toggle("fa-eye");
-        toggleIcon.classList.toggle("fa-eye-slash");
-    });
+    toggleIcon.classList.toggle("fa-eye", !isHidden);
+    toggleIcon.classList.toggle("fa-eye-slash", isHidden);
+}
+
+function checkCaps(e) {
+    const warning = document.getElementById("capsWarning");
+    if (!e.getModifierState) return;
+    warning.style.display = e.getModifierState("CapsLock") ? "block" : "none";
+}
+
+function handleSubmit() {
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+}
 </script>
 
 </body>

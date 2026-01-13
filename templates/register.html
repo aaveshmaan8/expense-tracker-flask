@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Register | Expense Tracker</title>
 
@@ -30,34 +30,54 @@
 
         <form method="POST" onsubmit="return validateForm()">
 
+            <!-- Username -->
             <label>Username</label>
-            <input type="text" name="username" required>
+            <input type="text" name="username" required autocomplete="username">
 
+            <!-- Password -->
             <label>Password</label>
             <div class="password-wrapper">
-                <input type="password" id="password" name="password"
-                       required oninput="checkStrength()" onkeyup="checkCaps(event)">
+                <input type="password"
+                       id="password"
+                       name="password"
+                       required
+                       autocomplete="new-password"
+                       oninput="checkStrength()"
+                       onkeyup="checkCaps(event)">
                 <i class="fa-solid fa-eye toggle-password"
                    onclick="togglePassword('password', this)"></i>
             </div>
 
-            <div id="capsWarning" class="password-match error" style="display:none;">
+            <!-- Caps Lock Warning -->
+            <div id="capsWarning"
+                 class="password-match error"
+                 style="display:none;">
                 ⚠ Caps Lock is ON
             </div>
 
+            <!-- Strength -->
             <div id="strengthText" class="password-strength"></div>
 
+            <!-- Confirm Password -->
             <label>Confirm Password</label>
             <div class="password-wrapper">
-                <input type="password" id="confirm_password"
-                       required oninput="checkMatch()">
+                <input type="password"
+                       id="confirm_password"
+                       required
+                       autocomplete="new-password"
+                       oninput="checkMatch()">
                 <i class="fa-solid fa-eye toggle-password"
                    onclick="togglePassword('confirm_password', this)"></i>
             </div>
 
+            <!-- Match Result -->
             <div id="matchText" class="password-match"></div>
 
-            <button type="submit" id="registerBtn" class="auth-btn" disabled>
+            <!-- Submit -->
+            <button type="submit"
+                    id="registerBtn"
+                    class="auth-btn"
+                    disabled>
                 Create Account
             </button>
         </form>
@@ -74,14 +94,16 @@
 <script>
 function togglePassword(id, icon) {
     const input = document.getElementById(id);
-    const show = input.type === "password";
-    input.type = show ? "text" : "password";
-    icon.classList.toggle("fa-eye");
-    icon.classList.toggle("fa-eye-slash");
+    const isHidden = input.type === "password";
+
+    input.type = isHidden ? "text" : "password";
+    icon.classList.toggle("fa-eye", !isHidden);
+    icon.classList.toggle("fa-eye-slash", isHidden);
 }
 
 function checkCaps(e) {
     const warning = document.getElementById("capsWarning");
+    if (!e.getModifierState) return;
     warning.style.display = e.getModifierState("CapsLock") ? "block" : "none";
 }
 
@@ -92,6 +114,7 @@ function checkStrength() {
     if (!pwd) {
         strength.textContent = "";
         strength.className = "password-strength";
+        checkMatch();
         return;
     }
 
@@ -121,7 +144,7 @@ function checkMatch() {
         return;
     }
 
-    if (pwd !== confirm) {
+    if (pwd !== confirm || pwd.length < 6) {
         match.textContent = "Passwords do not match";
         match.className = "password-match error";
         btn.disabled = true;

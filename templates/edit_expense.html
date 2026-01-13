@@ -1,51 +1,80 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Edit Expense | Expense Tracker</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- App CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
 <div class="auth-container">
     <div class="auth-card">
 
-        <h2>✏️ Edit Expense</h2>
-        <p class="auth-subtitle">Update your expense details</p>
+        <h2>
+            <i class="fa-solid fa-pen-to-square"></i>
+            Edit Expense
+        </h2>
+        <p class="auth-subtitle">
+            Update your expense details carefully
+        </p>
 
         <form method="POST">
 
-            <label>Category</label>
+            <label>
+                <i class="fa-solid fa-tags"></i>
+                Category
+            </label>
             <input
                 type="text"
                 name="category"
                 value="{{ expense.category }}"
+                placeholder="e.g. Food, Travel"
                 required
             >
 
-            <label>Description</label>
+            <label>
+                <i class="fa-solid fa-align-left"></i>
+                Description
+            </label>
             <input
                 type="text"
                 name="description"
                 value="{{ expense.description }}"
+                placeholder="Short description"
                 required
             >
 
-            <label>Amount (₹)</label>
+            <label>
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                Amount (₹)
+            </label>
             <input
                 type="number"
                 name="amount"
                 value="{{ expense.amount }}"
                 step="0.01"
+                min="0.01"
+                inputmode="decimal"
                 required
             >
 
             <button type="submit" class="auth-btn">
+                <i class="fa-solid fa-check"></i>
                 Update Expense
             </button>
         </form>
 
         <div class="auth-footer">
-            <a href="{{ url_for('index') }}">⬅ Back to Dashboard</a>
+            <a href="{{ url_for('index') }}">
+                <i class="fa-solid fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
         </div>
 
     </div>

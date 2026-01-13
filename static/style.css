@@ -45,7 +45,7 @@ body {
     background: var(--bg-main);
     color: var(--text-main);
     margin: 0;
-    padding: 30px;
+    padding: 24px;
 }
 
 /* =========================================================
@@ -55,6 +55,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
 }
 
 h1 {
@@ -85,7 +86,8 @@ a:hover {
     text-decoration: underline;
 }
 
-button {
+button,
+.auth-btn {
     background: var(--primary);
     color: #fff;
     border: none;
@@ -93,14 +95,19 @@ button {
     font-size: 14px;
     border-radius: 6px;
     cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-button:hover {
+button:hover,
+.auth-btn:hover {
     background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.2);
 }
 
 /* Primary CTA */
-a[href*="add"] {
+a[href*="add"],
+a[href*="export"] {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -108,16 +115,13 @@ a[href*="add"] {
     color: #fff !important;
     padding: 10px 18px;
     border-radius: 6px;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: 15px;
     box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
 }
 
-a[href*="add"]:hover {
+a[href*="add"]:hover,
+a[href*="export"]:hover {
     background: var(--primary-hover);
-    transform: translateY(-1px);
-    text-decoration: none;
 }
 
 /* =========================================================
@@ -126,8 +130,8 @@ a[href*="add"]:hover {
 .theme-toggle {
     background: var(--bg-card);
     border: 1px solid var(--border-light);
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     font-size: 18px;
     cursor: pointer;
@@ -136,7 +140,6 @@ a[href*="add"]:hover {
     justify-content: center;
     color: var(--text-main);
     box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
 }
 
 .theme-toggle:hover {
@@ -148,14 +151,14 @@ a[href*="add"]:hover {
    SEPARATOR
 ========================================================= */
 hr {
-    margin: 14px 0;
+    margin: 16px 0;
     border: none;
     height: 1px;
     background: var(--border-light);
 }
 
 /* =========================================================
-   UNIFIED FILTER BAR (FIXED)
+   UNIFIED FILTER BAR (FINAL FIX)
 ========================================================= */
 .top-bar {
     display: flex;
@@ -164,13 +167,16 @@ hr {
 }
 
 .unified-filter {
-    display: flex;
-    align-items: flex-end;
+    display: grid;
+    grid-template-columns: repeat(4, auto) auto;
     gap: 14px;
-    padding: 16px 20px;
+    align-items: end;
     background: var(--bg-card);
-    border-radius: 10px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    padding: 18px 22px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    max-width: 900px;
+    width: 100%;
 }
 
 .filter-item {
@@ -186,32 +192,26 @@ hr {
 
 .filter-item select,
 .filter-item input[type="date"] {
-    width: 135px;
-    padding: 6px 8px;
-    font-size: 13px;
+    width: 150px;
+    padding: 6px 10px;
     border-radius: 5px;
     border: 1px solid var(--border-light);
     background: var(--bg-card);
     color: var(--text-main);
 }
 
+.filter-item input[type="date"] {
+    padding-right: 36px;
+}
+
 .filter-actions {
     display: flex;
     gap: 10px;
-    padding-bottom: 2px;
+    align-items: center;
 }
 
 .filter-actions button {
-    padding: 7px 16px;
-    font-weight: 600;
-}
-
-/* Responsive filter */
-@media (max-width: 900px) {
-    .unified-filter {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
+    padding: 7px 18px;
 }
 
 /* =========================================================
@@ -232,50 +232,48 @@ input, select {
     margin-top: 6px;
     border-radius: 5px;
     border: 1px solid var(--border-light);
-    font-size: 14px;
     background: var(--bg-card);
     color: var(--text-main);
 }
 
 input:focus, select:focus {
     outline: 2px solid var(--primary);
-    outline-offset: 2px;
 }
 
 /* =========================================================
-   INLINE BUDGET
+   PASSWORD FIELD
 ========================================================= */
-.budget-inline {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    margin: 8px 0 14px;
-    padding: 8px 12px;
-    background: var(--bg-card);
-    border-radius: 8px;
-    font-size: 13px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.password-wrapper {
+    position: relative;
 }
 
-.budget-inline input {
-    width: 80px;
-    padding: 4px 6px;
+.toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    opacity: 0.6;
 }
 
-.budget-info {
-    font-size: 12px;
-    color: var(--text-muted);
+.toggle-password:hover {
+    opacity: 1;
 }
 
 /* =========================================================
    TABLE
 ========================================================= */
+.table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
 table {
     width: 100%;
+    min-width: 650px;
     border-collapse: collapse;
     background: var(--bg-card);
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
 
@@ -283,7 +281,6 @@ th {
     background: var(--bg-table-header);
     color: #fff;
     padding: 12px;
-    font-size: 14px;
 }
 
 td {
@@ -301,12 +298,11 @@ tr:hover {
 ========================================================= */
 .chart-container {
     width: 380px;
-    height: 380px;
+    max-width: 100%;
     margin: 30px auto;
     background: var(--bg-card);
     padding: 15px;
     border-radius: 8px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
 }
 
 /* =========================================================
@@ -321,7 +317,7 @@ tr:hover {
 
 .auth-card {
     background: var(--bg-card);
-    padding: 30px 35px;
+    padding: 30px;
     max-width: 420px;
     width: 100%;
     border-radius: 10px;
@@ -329,140 +325,55 @@ tr:hover {
     text-align: center;
 }
 
-.auth-btn {
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    font-weight: 600;
-}
-
-/* Alerts */
 .auth-alert {
     padding: 10px;
-    margin-bottom: 15px;
     border-radius: 6px;
-    font-size: 14px;
+    margin-bottom: 14px;
 }
 
 .auth-error {
     background: #fdecea;
     color: #b02a37;
-    border: 1px solid #f5c2c7;
 }
 
 .auth-success {
     background: #ecfdf5;
     color: #065f46;
-    border: 1px solid #a7f3d0;
 }
 
 /* =========================================================
-   MOBILE
+   EMPTY STATE
 ========================================================= */
-@media (max-width: 768px) {
-    body {
-        padding: 15px;
-    }
-
-    .header-bar {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .chart-container {
-        width: 100%;
-        height: auto;
-    }
-
-    table, th, td {
-        font-size: 13px;
-    }
-}
-/* ================= DATE INPUT FIX (CRITICAL) ================= */
-
-/* Prevent shrinking inside flex */
-.filter-item {
-    flex-shrink: 0;
+.empty-state {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
 }
 
-/* Fix Chrome date picker overlap */
-.filter-item input[type="date"] {
-    width: 155px;                /* slightly wider */
-    padding-right: 34px;         /* space for calendar icon */
-    box-sizing: border-box;      /* include icon inside width */
+.empty-state i {
+    font-size: 40px;
+    margin-bottom: 10px;
 }
 
-/* Align Apply / Reset properly */
-.filter-actions {
-    flex-shrink: 0;
-}
-
-/* Optional: slightly tighten gap so it looks balanced */
-.unified-filter {
-    gap: 12px;
-}
-/* ================= FINAL FILTER BAR FIX ================= */
-
-.top-bar {
+/* =========================================================
+   LOADER
+========================================================= */
+#loader {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.2);
     display: flex;
     justify-content: center;
-    margin: 24px 0;
-}
-
-.unified-filter {
-    display: grid;
-    grid-template-columns: repeat(4, auto) auto;
-    gap: 14px;
-    align-items: end;
-
-    background: var(--bg-card);
-    padding: 18px 22px;
-    border-radius: 12px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-
-    max-width: 900px;
-    width: 100%;
-}
-
-/* Each filter field */
-.filter-item {
-    display: flex;
-    flex-direction: column;
-    font-size: 13px;
-}
-
-/* Inputs */
-.filter-item select,
-.filter-item input[type="date"] {
-    width: 150px;
-    padding: 6px 10px;
-    box-sizing: border-box;
-}
-
-/* Calendar icon space */
-.filter-item input[type="date"] {
-    padding-right: 36px;
-}
-
-/* Buttons group */
-.filter-actions {
-    display: flex;
-    gap: 10px;
     align-items: center;
-    padding-bottom: 2px;
+    z-index: 9999;
 }
 
-.filter-actions button {
-    padding: 7px 18px;
-    font-weight: 600;
-}
-
-/* ================= RESPONSIVE ================= */
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 @media (max-width: 900px) {
     .unified-filter {
         grid-template-columns: repeat(2, 1fr);
-        row-gap: 16px;
     }
 
     .filter-actions {
@@ -470,20 +381,20 @@ tr:hover {
         justify-content: center;
     }
 }
-.password-wrapper {
-    position: relative;
-}
 
-.toggle-password {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    font-size: 15px;
-    opacity: 0.6;
-}
+@media (max-width: 600px) {
+    body {
+        padding: 14px;
+    }
 
-.toggle-password:hover {
-    opacity: 1;
+    .unified-filter {
+        grid-template-columns: 1fr;
+    }
+
+    a[href*="add"],
+    a[href*="export"] {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
 }

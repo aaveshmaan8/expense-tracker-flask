@@ -1,20 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Add Expense | Expense Tracker</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- App CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
 <div class="auth-container">
     <div class="auth-card">
 
-        <h2>➕ Add New Expense</h2>
-        <p class="auth-subtitle">Record your spending details</p>
+        <h2>
+            <i class="fa-solid fa-circle-plus"></i>
+            Add New Expense
+        </h2>
+        <p class="auth-subtitle">
+            Record your spending details accurately
+        </p>
 
         <form method="POST">
 
-            <label>Date</label>
+            <label>
+                <i class="fa-solid fa-calendar-days"></i>
+                Date
+            </label>
             <input
                 type="date"
                 name="date"
@@ -22,23 +37,32 @@
                 required
             >
 
-            <label>Category</label>
+            <label>
+                <i class="fa-solid fa-tags"></i>
+                Category
+            </label>
             <input
                 type="text"
                 name="category"
-                placeholder="e.g. Food, Travel, Shopping"
+                placeholder="Food, Travel, Shopping, Rent"
                 required
             >
 
-            <label>Description</label>
+            <label>
+                <i class="fa-solid fa-pen"></i>
+                Description
+            </label>
             <input
                 type="text"
                 name="description"
-                placeholder="Optional details"
+                placeholder="Optional details (e.g. Lunch with friends)"
                 required
             >
 
-            <label>Amount (₹)</label>
+            <label>
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+                Amount
+            </label>
             <input
                 type="number"
                 name="amount"
@@ -49,12 +73,15 @@
             >
 
             <button type="submit" class="auth-btn">
+                <i class="fa-solid fa-plus"></i>
                 Add Expense
             </button>
         </form>
 
         <div class="auth-footer">
-            <a href="{{ url_for('index') }}">⬅ Back to Dashboard</a>
+            <a href="{{ url_for('index') }}">
+                ⬅ Back to Dashboard
+            </a>
         </div>
 
     </div>

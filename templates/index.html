@@ -17,7 +17,7 @@
 <body>
 
 <!-- ================= HEADER ================= -->
-<div class="header-bar">
+<header class="header-bar">
     <div class="header-left">
         <h1>💰 Expense Tracker</h1>
         <p>
@@ -29,14 +29,21 @@
         </p>
     </div>
 
-    <button id="themeToggle" class="theme-toggle" title="Toggle dark mode">🌙</button>
-</div>
+    <button id="themeToggle"
+            class="theme-toggle"
+            title="Toggle dark mode"
+            aria-label="Toggle dark mode">
+        🌙
+    </button>
+</header>
 
 <hr>
 
 <!-- ================= FILTER BAR ================= -->
 <div class="top-bar">
-    <form method="get" class="unified-filter" onsubmit="showLoader()">
+    <form method="get"
+          class="unified-filter"
+          onsubmit="showLoader()">
 
         <div class="filter-item">
             <label>Month</label>
@@ -85,6 +92,7 @@
     </form>
 </div>
 
+<!-- Loader -->
 <div id="loader" class="loader" style="display:none;">
     <i class="fa-solid fa-spinner fa-spin"></i> Loading...
 </div>
@@ -133,35 +141,40 @@
 </div>
 {% else %}
 <table>
-    <tr>
-        <th>Date</th>
-        <th>Category</th>
-        <th>Description</th>
-        <th>Amount</th>
-        <th>Actions</th>
-    </tr>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Category</th>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
 
-    {% for e in expenses %}
-    <tr>
-        <td>{{ e.date }}</td>
-        <td>{{ e.category }}</td>
-        <td>{{ e.description }}</td>
-        <td>₹{{ e.amount }}</td>
-        <td>
-            <a href="{{ url_for('edit_expense', id=e.id) }}">
-                <i class="fa-solid fa-pen"></i> Edit
-            </a> |
-            <a href="{{ url_for('delete', id=e.id) }}"
-               onclick="return confirm('Delete this expense?')">
-                <i class="fa-solid fa-trash"></i> Delete
-            </a>
-        </td>
-    </tr>
-    {% endfor %}
+    <tbody>
+        {% for e in expenses %}
+        <tr>
+            <td>{{ e.date }}</td>
+            <td>{{ e.category }}</td>
+            <td>{{ e.description }}</td>
+            <td>₹{{ e.amount }}</td>
+            <td>
+                <a href="{{ url_for('edit_expense', id=e.id) }}">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </a> |
+                <a href="{{ url_for('delete', id=e.id) }}"
+                   onclick="return confirm('Delete this expense?')">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
 </table>
 {% endif %}
 
 <!-- ================= ANALYTICS ================= -->
+{% if expenses|length > 0 %}
 <h3>Category-wise Distribution</h3>
 <div class="chart-container">
     <canvas id="pieChart"></canvas>
@@ -171,6 +184,7 @@
 <div class="chart-container">
     <canvas id="barChart"></canvas>
 </div>
+{% endif %}
 
 <!-- ================= SCRIPTS ================= -->
 <script>
@@ -178,6 +192,12 @@
 function showLoader() {
     document.getElementById("loader").style.display = "block";
 }
+
+/* Hide loader after load */
+window.addEventListener("load", () => {
+    const loader = document.getElementById("loader");
+    if (loader) loader.style.display = "none";
+});
 
 /* Charts */
 const pieData = JSON.parse('{{ category_summary | tojson | safe }}');

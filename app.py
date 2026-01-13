@@ -15,6 +15,7 @@ app.secret_key = "expense-secret"
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")  # ✅ enable FK
     return conn
 
 
@@ -37,7 +38,8 @@ def init_db():
             date TEXT NOT NULL,
             category TEXT NOT NULL,
             description TEXT,
-            amount REAL NOT NULL
+            amount REAL NOT NULL CHECK(amount >= 0),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     """)
 
@@ -46,8 +48,9 @@ def init_db():
             user_id INTEGER NOT NULL,
             month TEXT NOT NULL,
             year TEXT NOT NULL,
-            amount REAL NOT NULL,
-            PRIMARY KEY (user_id, month, year)
+            amount REAL NOT NULL CHECK(amount >= 0),
+            PRIMARY KEY (user_id, month, year),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
     """)
 
@@ -133,6 +136,7 @@ def login():
         session["username"] = user["username"]
         session["is_admin"] = user["is_admin"]
 
+        flash("Welcome back!", "success")
         return redirect(url_for("index"))
 
     return render_template("login.html")
@@ -141,6 +145,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
+    flash("Logged out successfully.", "success")
     return redirect(url_for("login"))
 
 
@@ -214,6 +219,11 @@ def index():
 @login_required
 def add_expense():
     if request.method == "POST":
+        amount = float(request.form["amount"])
+        if amount < 0:
+            flash("Amount cannot be negative.", "error")
+            return redirect(url_for("add_expense"))
+
         conn = get_db()
         conn.execute("""
             INSERT INTO expenses (user_id, date, category, description, amount)
@@ -223,10 +233,12 @@ def add_expense():
             request.form["date"],
             request.form["category"],
             request.form["description"],
-            float(request.form["amount"])
+            amount
         ))
         conn.commit()
         conn.close()
+
+        flash("Expense added successfully.", "success")
         return redirect(url_for("index"))
 
     return render_template("add_expense.html")
@@ -246,6 +258,11 @@ def edit_expense(id):
         return "Unauthorized", 403
 
     if request.method == "POST":
+        amount = float(request.form["amount"])
+        if amount < 0:
+            flash("Amount cannot be negative.", "error")
+            return redirect(url_for("edit_expense", id=id))
+
         conn.execute("""
             UPDATE expenses
             SET category=?, description=?, amount=?
@@ -253,12 +270,14 @@ def edit_expense(id):
         """, (
             request.form["category"],
             request.form["description"],
-            float(request.form["amount"]),
+            amount,
             id,
             session["user_id"]
         ))
         conn.commit()
         conn.close()
+
+        flash("Expense updated successfully.", "success")
         return redirect(url_for("index"))
 
     conn.close()
@@ -275,6 +294,8 @@ def delete(id):
     )
     conn.commit()
     conn.close()
+
+    flash("Expense deleted.", "success")
     return redirect(url_for("index"))
 
 
@@ -284,25 +305,25 @@ def delete(id):
 def budget():
     month = request.form.get("month")
     year = request.form.get("year")
-    amount = request.form.get("amount")
+    amount = float(request.form.get("amount"))
 
     if not month or not year:
         flash("Select month & year to set budget.", "error")
         return redirect(url_for("index"))
 
     conn = get_db()
-    conn.execute("""
-        DELETE FROM budgets WHERE user_id=? AND month=? AND year=?
-    """, (session["user_id"], month, year))
-
-    conn.execute("""
-        INSERT INTO budgets (user_id, month, year, amount)
-        VALUES (?, ?, ?, ?)
-    """, (session["user_id"], month, year, float(amount)))
-
+    conn.execute(
+        "DELETE FROM budgets WHERE user_id=? AND month=? AND year=?",
+        (session["user_id"], month, year)
+    )
+    conn.execute(
+        "INSERT INTO budgets VALUES (?, ?, ?, ?)",
+        (session["user_id"], month, year, amount)
+    )
     conn.commit()
     conn.close()
 
+    flash("Budget saved.", "success")
     return redirect(url_for("index", month=month, year=year))
 
 
@@ -316,6 +337,10 @@ def export_csv():
         (session["user_id"],)
     ).fetchall()
     conn.close()
+
+    if not rows:
+        flash("No expenses to export.", "error")
+        return redirect(url_for("index"))
 
     output = io.StringIO()
     writer = csv.writer(output)
@@ -354,6 +379,7 @@ def admin_dashboard():
     )
 
 
+# ================= MAIN =================
 if __name__ == "__main__":
     init_db()
     app.run(host="0.0.0.0", port=5000)

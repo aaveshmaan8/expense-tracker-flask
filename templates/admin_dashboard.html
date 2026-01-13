@@ -1,47 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <title>Admin Dashboard | Expense Tracker</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- App CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
 <div class="auth-container">
-    <div class="auth-card" style="max-width: 1100px;">
+    <div class="auth-card" style="max-width: 1200px;">
 
-        <h2>🧑‍💼 Admin Dashboard</h2>
-        <p class="auth-subtitle">Overview of platform usage</p>
+        <h2>
+            <i class="fa-solid fa-user-shield"></i>
+            Admin Dashboard
+        </h2>
+        <p class="auth-subtitle">
+            Platform usage & financial overview
+        </p>
 
+        <!-- ================= ADMIN NAV ================= -->
         <div class="admin-links">
-            <a href="{{ url_for('index') }}">⬅ User Dashboard</a> |
-            <a href="{{ url_for('logout') }}">Logout</a>
+            <a href="{{ url_for('index') }}">
+                <i class="fa-solid fa-arrow-left"></i>
+                User Dashboard
+            </a>
+            &nbsp; | &nbsp;
+            <a href="{{ url_for('logout') }}">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                Logout
+            </a>
         </div>
 
         <!-- ================= STATS ================= -->
         <div class="admin-stats">
 
             <div class="stat-card">
-                <h3>{{ total_users }}</h3>
+                <h3>
+                    <i class="fa-solid fa-users"></i><br>
+                    {{ total_users }}
+                </h3>
                 <p>Total Users</p>
             </div>
 
             <div class="stat-card">
-                <h3>₹{{ total_expenses }}</h3>
+                <h3>
+                    <i class="fa-solid fa-wallet"></i><br>
+                    ₹{{ total_expenses }}
+                </h3>
                 <p>Total Expenses</p>
             </div>
 
         </div>
 
         <!-- ================= TABLE ================= -->
-        <h3 style="margin-top: 30px;">📋 All User Expenses</h3>
+        <h3 style="margin-top: 30px;">
+            <i class="fa-solid fa-table-list"></i>
+            All User Expenses
+        </h3>
 
+        {% if expenses|length == 0 %}
+            <div class="empty-state">
+                <i class="fa-solid fa-folder-open"></i>
+                <h4>No expense data</h4>
+                <p>No users have added expenses yet.</p>
+            </div>
+        {% else %}
         <table>
             <tr>
                 <th>User</th>
                 <th>Date</th>
                 <th>Category</th>
                 <th>Description</th>
-                <th>Amount</th>
+                <th>Amount (₹)</th>
             </tr>
 
             {% for e in expenses %}
@@ -54,9 +90,6 @@
             </tr>
             {% endfor %}
         </table>
-
-        {% if expenses|length == 0 %}
-            <p style="margin-top: 15px;">No expenses found.</p>
         {% endif %}
 
     </div>
