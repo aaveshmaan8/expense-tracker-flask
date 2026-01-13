@@ -13,19 +13,21 @@
 
 <body>
 
-<div class="auth-container">
+<div class="auth-container fade-in">
     <div class="auth-card">
 
         <h2>
             <i class="fa-solid fa-circle-plus"></i>
             Add New Expense
         </h2>
+
         <p class="auth-subtitle">
             Record your spending details accurately
         </p>
 
-        <form method="POST">
+        <form method="POST" onsubmit="handleSubmit()">
 
+            <!-- Date -->
             <label>
                 <i class="fa-solid fa-calendar-days"></i>
                 Date
@@ -37,6 +39,7 @@
                 required
             >
 
+            <!-- Category -->
             <label>
                 <i class="fa-solid fa-tags"></i>
                 Category
@@ -45,20 +48,22 @@
                 type="text"
                 name="category"
                 placeholder="Food, Travel, Shopping, Rent"
+                autocomplete="off"
                 required
             >
 
+            <!-- Description -->
             <label>
                 <i class="fa-solid fa-pen"></i>
-                Description
+                Description <span style="font-size:12px;color:#888;">(optional)</span>
             </label>
             <input
                 type="text"
                 name="description"
-                placeholder="Optional details (e.g. Lunch with friends)"
-                required
+                placeholder="e.g. Lunch with friends"
             >
 
+            <!-- Amount -->
             <label>
                 <i class="fa-solid fa-indian-rupee-sign"></i>
                 Amount
@@ -68,11 +73,13 @@
                 name="amount"
                 step="0.01"
                 min="0.01"
+                inputmode="decimal"
                 placeholder="0.00"
                 required
             >
 
-            <button type="submit" class="auth-btn">
+            <!-- Submit -->
+            <button type="submit" class="auth-btn" id="submitBtn">
                 <i class="fa-solid fa-plus"></i>
                 Add Expense
             </button>
@@ -86,6 +93,15 @@
 
     </div>
 </div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+function handleSubmit() {
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+}
+</script>
 
 </body>
 </html>

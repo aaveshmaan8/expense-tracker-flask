@@ -7,12 +7,14 @@
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <!-- App CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
 
 <div class="auth-container">
-    <div class="auth-card">
+    <div class="auth-card fade-in">
 
         <h2>Create Account</h2>
         <p class="auth-subtitle">Track your expenses smartly</p>
@@ -32,7 +34,16 @@
 
             <!-- Username -->
             <label>Username</label>
-            <input type="text" name="username" required autocomplete="username">
+            <input type="text"
+                   name="username"
+                   id="username"
+                   required
+                   minlength="3"
+                   autocomplete="username"
+                   placeholder="Choose a username"
+                   oninput="validateUsername()">
+
+            <div id="userHint" class="password-match"></div>
 
             <!-- Password -->
             <label>Password</label>
@@ -42,6 +53,7 @@
                        name="password"
                        required
                        autocomplete="new-password"
+                       placeholder="Minimum 6 characters"
                        oninput="checkStrength()"
                        onkeyup="checkCaps(event)">
                 <i class="fa-solid fa-eye toggle-password"
@@ -65,6 +77,7 @@
                        id="confirm_password"
                        required
                        autocomplete="new-password"
+                       placeholder="Re-enter password"
                        oninput="checkMatch()">
                 <i class="fa-solid fa-eye toggle-password"
                    onclick="togglePassword('confirm_password', this)"></i>
@@ -92,21 +105,40 @@
 
 <!-- ================= SCRIPTS ================= -->
 <script>
+const registerBtn = document.getElementById("registerBtn");
+
+/* Toggle password visibility */
 function togglePassword(id, icon) {
     const input = document.getElementById(id);
-    const isHidden = input.type === "password";
-
-    input.type = isHidden ? "text" : "password";
-    icon.classList.toggle("fa-eye", !isHidden);
-    icon.classList.toggle("fa-eye-slash", isHidden);
+    const hidden = input.type === "password";
+    input.type = hidden ? "text" : "password";
+    icon.classList.toggle("fa-eye", !hidden);
+    icon.classList.toggle("fa-eye-slash", hidden);
 }
 
+/* Caps Lock warning */
 function checkCaps(e) {
     const warning = document.getElementById("capsWarning");
     if (!e.getModifierState) return;
     warning.style.display = e.getModifierState("CapsLock") ? "block" : "none";
 }
 
+/* Username validation */
+function validateUsername() {
+    const user = document.getElementById("username").value.trim();
+    const hint = document.getElementById("userHint");
+
+    if (user.length < 3) {
+        hint.textContent = "Username must be at least 3 characters";
+        hint.className = "password-match error";
+        registerBtn.disabled = true;
+    } else {
+        hint.textContent = "";
+        checkMatch();
+    }
+}
+
+/* Password strength */
 function checkStrength() {
     const pwd = document.getElementById("password").value;
     const strength = document.getElementById("strengthText");
@@ -132,31 +164,35 @@ function checkStrength() {
     checkMatch();
 }
 
+/* Password match */
 function checkMatch() {
     const pwd = document.getElementById("password").value;
     const confirm = document.getElementById("confirm_password").value;
     const match = document.getElementById("matchText");
-    const btn = document.getElementById("registerBtn");
 
-    if (!confirm) {
+    if (!confirm || pwd.length < 6) {
         match.textContent = "";
-        btn.disabled = true;
+        registerBtn.disabled = true;
         return;
     }
 
-    if (pwd !== confirm || pwd.length < 6) {
+    if (pwd !== confirm) {
         match.textContent = "Passwords do not match";
         match.className = "password-match error";
-        btn.disabled = true;
+        registerBtn.disabled = true;
     } else {
         match.textContent = "Passwords match ✓";
         match.className = "password-match strong";
-        btn.disabled = false;
+        registerBtn.disabled = false;
     }
 }
 
+/* Final validation */
 function validateForm() {
-    return !document.getElementById("registerBtn").disabled;
+    registerBtn.innerHTML =
+        '<i class="fa-solid fa-spinner fa-spin"></i> Creating...';
+    registerBtn.disabled = true;
+    return true;
 }
 </script>
 

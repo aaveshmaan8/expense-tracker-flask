@@ -7,13 +7,14 @@
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <!-- App CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 
 <body>
 
 <div class="auth-container">
-    <div class="auth-card">
+    <div class="auth-card fade-in">
 
         <h2>🔐 Welcome Back</h2>
         <p class="auth-subtitle">Login to manage and track your expenses</p>
@@ -36,7 +37,8 @@
             <input type="text"
                    name="username"
                    required
-                   autocomplete="username">
+                   autocomplete="username"
+                   placeholder="Enter your username">
 
             <!-- Password -->
             <label>Password</label>
@@ -46,6 +48,7 @@
                        id="password"
                        required
                        autocomplete="current-password"
+                       placeholder="Enter your password"
                        onkeyup="checkCaps(event)">
                 <i class="fa-solid fa-eye toggle-password"
                    id="toggleIcon"
@@ -67,7 +70,12 @@
             </button>
         </form>
 
+        <!-- FOOTER -->
         <div class="auth-footer">
+            <span style="color:#999; font-size:13px;">
+                Forgot password? (Coming soon)
+            </span>
+            <br><br>
             New here?
             <a href="{{ url_for('register') }}">Create an account</a>
         </div>

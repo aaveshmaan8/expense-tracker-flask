@@ -13,19 +13,21 @@
 
 <body>
 
-<div class="auth-container">
+<div class="auth-container fade-in">
     <div class="auth-card">
 
         <h2>
             <i class="fa-solid fa-pen-to-square"></i>
             Edit Expense
         </h2>
+
         <p class="auth-subtitle">
             Update your expense details carefully
         </p>
 
-        <form method="POST">
+        <form method="POST" onsubmit="handleSubmit()">
 
+            <!-- Category -->
             <label>
                 <i class="fa-solid fa-tags"></i>
                 Category
@@ -34,22 +36,24 @@
                 type="text"
                 name="category"
                 value="{{ expense.category }}"
-                placeholder="e.g. Food, Travel"
+                placeholder="Food, Travel, Shopping"
+                autocomplete="off"
                 required
             >
 
+            <!-- Description -->
             <label>
                 <i class="fa-solid fa-align-left"></i>
-                Description
+                Description <span style="font-size:12px;color:#888;">(optional)</span>
             </label>
             <input
                 type="text"
                 name="description"
                 value="{{ expense.description }}"
-                placeholder="Short description"
-                required
+                placeholder="Short note about this expense"
             >
 
+            <!-- Amount -->
             <label>
                 <i class="fa-solid fa-indian-rupee-sign"></i>
                 Amount (₹)
@@ -64,7 +68,8 @@
                 required
             >
 
-            <button type="submit" class="auth-btn">
+            <!-- Submit -->
+            <button type="submit" class="auth-btn" id="submitBtn">
                 <i class="fa-solid fa-check"></i>
                 Update Expense
             </button>
@@ -79,6 +84,15 @@
 
     </div>
 </div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+function handleSubmit() {
+    const btn = document.getElementById("submitBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Updating...';
+}
+</script>
 
 </body>
 </html>

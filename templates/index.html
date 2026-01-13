@@ -41,9 +41,7 @@
 
 <!-- ================= FILTER BAR ================= -->
 <div class="top-bar">
-    <form method="get"
-          class="unified-filter"
-          onsubmit="showLoader()">
+    <form method="get" class="unified-filter" onsubmit="showLoader()">
 
         <div class="filter-item">
             <label>Month</label>
@@ -94,7 +92,7 @@
 
 <!-- Loader -->
 <div id="loader" class="loader" style="display:none;">
-    <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+    <div class="spinner"></div>
 </div>
 
 <!-- ================= PRIMARY ACTIONS ================= -->
@@ -140,6 +138,7 @@
     <p>Add your first expense to start tracking.</p>
 </div>
 {% else %}
+<div class="table-wrapper">
 <table>
     <thead>
         <tr>
@@ -150,7 +149,6 @@
             <th>Actions</th>
         </tr>
     </thead>
-
     <tbody>
         {% for e in expenses %}
         <tr>
@@ -171,6 +169,7 @@
         {% endfor %}
     </tbody>
 </table>
+</div>
 {% endif %}
 
 <!-- ================= ANALYTICS ================= -->
@@ -186,36 +185,57 @@
 </div>
 {% endif %}
 
+<!-- ================= SAFE JSON DATA ================= -->
+<script type="application/json" id="pie-data">
+    {{ category_summary | tojson }}
+</script>
+
+<script type="application/json" id="bar-data">
+    {{ monthly_summary | tojson }}
+</script>
+
 <!-- ================= SCRIPTS ================= -->
 <script>
 /* Loader */
 function showLoader() {
-    document.getElementById("loader").style.display = "block";
+    document.getElementById("loader").style.display = "flex";
 }
 
-/* Hide loader after load */
 window.addEventListener("load", () => {
     const loader = document.getElementById("loader");
     if (loader) loader.style.display = "none";
 });
 
-/* Charts */
-const pieData = JSON.parse('{{ category_summary | tojson | safe }}');
-if (Object.keys(pieData).length) {
+/* Read JSON safely */
+const pieData = JSON.parse(
+    document.getElementById("pie-data").textContent
+);
+const barData = JSON.parse(
+    document.getElementById("bar-data").textContent
+);
+
+/* Pie Chart */
+if (Object.keys(pieData).length > 0) {
     new Chart(document.getElementById("pieChart"), {
         type: "pie",
         data: {
             labels: Object.keys(pieData),
             datasets: [{
                 data: Object.values(pieData),
-                backgroundColor: ["#ff6384","#36a2eb","#ffce56","#4bc0c0","#9966ff"]
+                backgroundColor: [
+                    "#ff6384",
+                    "#36a2eb",
+                    "#ffce56",
+                    "#4bc0c0",
+                    "#9966ff"
+                ]
             }]
         }
     });
 }
 
-const barData = JSON.parse('{{ monthly_summary | tojson | safe }}');
-if (Object.keys(barData).length) {
+/* Bar Chart */
+if (Object.keys(barData).length > 0) {
     new Chart(document.getElementById("barChart"), {
         type: "bar",
         data: {
@@ -235,6 +255,7 @@ if (localStorage.getItem("theme") === "dark") {
     document.body.classList.add("dark");
     toggle.textContent = "☀️";
 }
+
 toggle.onclick = () => {
     document.body.classList.toggle("dark");
     const dark = document.body.classList.contains("dark");

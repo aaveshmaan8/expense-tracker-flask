@@ -1,17 +1,17 @@
-from flask import (
-    Flask, render_template, request, redirect,
-    session, flash, url_for, Response
-)
+from flask import Flask, render_template, request, redirect, session, flash, url_for, Response
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import psycopg2
 import psycopg2.extras
 import csv, io, os
 
+# ================= APP SETUP =================
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "expense-secret")
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
 
 # ================= DATABASE =================
 def get_db():
@@ -68,14 +68,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return wrapper
 
-def admin_required(f):
-    @wraps(f)
-    def wrapper(*args, **kwargs):
-        if session.get("is_admin") != 1:
-            return "Access Denied", 403
-        return f(*args, **kwargs)
-    return wrapper
-
 # ================= AUTH =================
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -101,6 +93,7 @@ def register():
             "INSERT INTO users (username, password) VALUES (%s, %s)",
             (username, generate_password_hash(password))
         )
+
         conn.commit()
         cur.close()
         conn.close()
@@ -191,7 +184,7 @@ def index():
         )
         row = cur.fetchone()
         if row:
-            budget = row["amount"]
+            budget = float(row["amount"])
 
     cur.close()
     conn.close()
@@ -209,7 +202,114 @@ def index():
         budget=budget
     )
 
+# ================= EXPENSES =================
+@app.route("/add", methods=["GET", "POST"])
+@login_required
+def add_expense():
+    if request.method == "POST":
+        conn = get_db()
+        cur = conn.cursor()
+
+        cur.execute("""
+            INSERT INTO expenses (user_id, date, category, description, amount)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (
+            session["user_id"],
+            request.form["date"],
+            request.form["category"],
+            request.form["description"],
+            float(request.form["amount"])
+        ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for("index"))
+
+    return render_template("add_expense.html")
+
+@app.route("/edit/<int:id>", methods=["GET", "POST"])
+@login_required
+def edit_expense(id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM expenses WHERE id=%s AND user_id=%s",
+        (id, session["user_id"])
+    )
+    expense = cur.fetchone()
+
+    if not expense:
+        cur.close()
+        conn.close()
+        return "Unauthorized", 403
+
+    if request.method == "POST":
+        cur.execute("""
+            UPDATE expenses
+            SET category=%s, description=%s, amount=%s
+            WHERE id=%s AND user_id=%s
+        """, (
+            request.form["category"],
+            request.form["description"],
+            float(request.form["amount"]),
+            id,
+            session["user_id"]
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for("index"))
+
+    cur.close()
+    conn.close()
+    return render_template("edit_expense.html", expense=expense)
+
+@app.route("/delete/<int:id>")
+@login_required
+def delete(id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM expenses WHERE id=%s AND user_id=%s",
+        (id, session["user_id"])
+    )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for("index"))
+
+# ================= EXPORT =================
+@app.route("/export/csv")
+@login_required
+def export_csv():
+    conn = get_db()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT date, category, description, amount FROM expenses WHERE user_id=%s",
+        (session["user_id"],)
+    )
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Category", "Description", "Amount"])
+    for r in rows:
+        writer.writerow([r["date"], r["category"], r["description"], r["amount"]])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=expenses.csv"}
+    )
+
 # ================= MAIN =================
 if __name__ == "__main__":
     init_db()
-    app.run(host="0.0.0.0", port=5000)
+    app.run(debug=True)
