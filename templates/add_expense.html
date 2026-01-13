@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Add Expense | Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="auth-card">
+
+        <h2>➕ Add New Expense</h2>
+        <p class="auth-subtitle">Record your spending details</p>
+
+        <form method="POST">
+
+            <label>Date</label>
+            <input
+                type="date"
+                name="date"
+                value="{{ request.form.date or '' }}"
+                required
+            >
+
+            <label>Category</label>
+            <input
+                type="text"
+                name="category"
+                placeholder="e.g. Food, Travel, Shopping"
+                required
+            >
+
+            <label>Description</label>
+            <input
+                type="text"
+                name="description"
+                placeholder="Optional details"
+                required
+            >
+
+            <label>Amount (₹)</label>
+            <input
+                type="number"
+                name="amount"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                required
+            >
+
+            <button type="submit" class="auth-btn">
+                Add Expense
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <a href="{{ url_for('index') }}">⬅ Back to Dashboard</a>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

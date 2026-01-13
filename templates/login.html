@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login | Expense Tracker</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<div class="auth-container">
+    <div class="auth-card">
+
+        <h2>🔐 Welcome Back</h2>
+        <p class="auth-subtitle">Login to manage and track your expenses</p>
+
+        <!-- FLASH MESSAGES -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="auth-alert auth-error">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <label>Username</label>
+            <input type="text" name="username" required>
+
+            <label>Password</label>
+            <div class="password-wrapper">
+                <input type="password" name="password" id="password" required>
+                <i class="fa-solid fa-eye toggle-password" id="toggleIcon"></i>
+            </div>
+
+            <button type="submit" class="auth-btn">Login</button>
+        </form>
+
+        <div class="auth-footer">
+            New here?
+            <a href="{{ url_for('register') }}">Create an account</a>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= SCRIPT ================= -->
+<script>
+    const passwordInput = document.getElementById("password");
+    const toggleIcon = document.getElementById("toggleIcon");
+
+    toggleIcon.addEventListener("click", () => {
+        const isHidden = passwordInput.type === "password";
+
+        passwordInput.type = isHidden ? "text" : "password";
+        toggleIcon.classList.toggle("fa-eye");
+        toggleIcon.classList.toggle("fa-eye-slash");
+    });
+</script>
+
+</body>
+</html>

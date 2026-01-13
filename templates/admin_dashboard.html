@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard | Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="auth-card" style="max-width: 1100px;">
+
+        <h2>🧑‍💼 Admin Dashboard</h2>
+        <p class="auth-subtitle">Overview of platform usage</p>
+
+        <div class="admin-links">
+            <a href="{{ url_for('index') }}">⬅ User Dashboard</a> |
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+
+        <!-- ================= STATS ================= -->
+        <div class="admin-stats">
+
+            <div class="stat-card">
+                <h3>{{ total_users }}</h3>
+                <p>Total Users</p>
+            </div>
+
+            <div class="stat-card">
+                <h3>₹{{ total_expenses }}</h3>
+                <p>Total Expenses</p>
+            </div>
+
+        </div>
+
+        <!-- ================= TABLE ================= -->
+        <h3 style="margin-top: 30px;">📋 All User Expenses</h3>
+
+        <table>
+            <tr>
+                <th>User</th>
+                <th>Date</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+            </tr>
+
+            {% for e in expenses %}
+            <tr>
+                <td>{{ e.username }}</td>
+                <td>{{ e.date }}</td>
+                <td>{{ e.category }}</td>
+                <td>{{ e.description }}</td>
+                <td>₹{{ e.amount }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+
+        {% if expenses|length == 0 %}
+            <p style="margin-top: 15px;">No expenses found.</p>
+        {% endif %}
+
+    </div>
+</div>
+
+</body>
+</html>

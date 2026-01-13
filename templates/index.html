@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Expense Tracker</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- App CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<!-- ================= HEADER ================= -->
+<div class="header-bar">
+    <div class="header-left">
+        <h1>💰 Expense Tracker</h1>
+        <p>
+            Welcome, <b>{{ session.username }}</b> |
+            <a href="{{ url_for('logout') }}">Logout</a>
+            {% if session.is_admin == 1 %}
+                | <a href="{{ url_for('admin_dashboard') }}">Admin Dashboard</a>
+            {% endif %}
+        </p>
+    </div>
+
+    <button id="themeToggle" class="theme-toggle" title="Toggle dark mode">🌙</button>
+</div>
+
+<hr>
+
+<!-- ================= FILTER BAR ================= -->
+<div class="top-bar">
+    <form method="get" class="unified-filter" onsubmit="showLoader()">
+
+        <div class="filter-item">
+            <label>Month</label>
+            <select name="month">
+                <option value="">All</option>
+                {% for m, name in [
+                    ('01','Jan'),('02','Feb'),('03','Mar'),('04','Apr'),
+                    ('05','May'),('06','Jun'),('07','Jul'),('08','Aug'),
+                    ('09','Sep'),('10','Oct'),('11','Nov'),('12','Dec')
+                ] %}
+                <option value="{{ m }}" {{ 'selected' if selected_month == m else '' }}>
+                    {{ name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>Year</label>
+            <select name="year">
+                <option value="">All</option>
+                {% for y in range(2022,2031) %}
+                <option value="{{ y }}" {{ 'selected' if selected_year == y|string else '' }}>
+                    {{ y }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="filter-item">
+            <label>From</label>
+            <input type="date" name="start_date" value="{{ start_date }}">
+        </div>
+
+        <div class="filter-item">
+            <label>To</label>
+            <input type="date" name="end_date" value="{{ end_date }}">
+        </div>
+
+        <div class="filter-actions">
+            <button type="submit">
+                <i class="fa-solid fa-filter"></i> Apply
+            </button>
+            <a href="{{ url_for('index') }}">Reset</a>
+        </div>
+    </form>
+</div>
+
+<div id="loader" class="loader" style="display:none;">
+    <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+</div>
+
+<!-- ================= PRIMARY ACTIONS ================= -->
+<div style="margin: 16px 0;">
+    <a href="{{ url_for('add_expense') }}">
+        <i class="fa-solid fa-plus"></i> Add Expense
+    </a>
+    &nbsp;&nbsp;
+    <a href="{{ url_for('export_csv') }}">
+        <i class="fa-solid fa-file-csv"></i> Export CSV
+    </a>
+</div>
+
+<p><b>Total Expense:</b> ₹{{ total }}</p>
+
+<!-- ================= BUDGET ================= -->
+{% if selected_month and selected_year %}
+<form method="POST" action="{{ url_for('budget') }}" class="budget-inline">
+    <input type="hidden" name="month" value="{{ selected_month }}">
+    <input type="hidden" name="year" value="{{ selected_year }}">
+
+    <label>Set Budget:</label>
+    <input type="number" name="amount" min="1" step="0.01" required>
+    <button type="submit">Save</button>
+
+    {% if budget %}
+        <span class="budget-info">Saved: ₹{{ budget }}</span>
+    {% endif %}
+</form>
+{% else %}
+<p class="budget-info">Select a <b>month and year</b> to set a budget</p>
+{% endif %}
+
+<hr>
+
+<!-- ================= EXPENSE TABLE ================= -->
+<h3>All Expenses</h3>
+
+{% if expenses|length == 0 %}
+<div class="empty-state">
+    <i class="fa-solid fa-wallet"></i>
+    <h4>No expenses yet</h4>
+    <p>Add your first expense to start tracking.</p>
+</div>
+{% else %}
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Category</th>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Actions</th>
+    </tr>
+
+    {% for e in expenses %}
+    <tr>
+        <td>{{ e.date }}</td>
+        <td>{{ e.category }}</td>
+        <td>{{ e.description }}</td>
+        <td>₹{{ e.amount }}</td>
+        <td>
+            <a href="{{ url_for('edit_expense', id=e.id) }}">
+                <i class="fa-solid fa-pen"></i> Edit
+            </a> |
+            <a href="{{ url_for('delete', id=e.id) }}"
+               onclick="return confirm('Delete this expense?')">
+                <i class="fa-solid fa-trash"></i> Delete
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+<!-- ================= ANALYTICS ================= -->
+<h3>Category-wise Distribution</h3>
+<div class="chart-container">
+    <canvas id="pieChart"></canvas>
+</div>
+
+<h3>Monthly Expense Trend</h3>
+<div class="chart-container">
+    <canvas id="barChart"></canvas>
+</div>
+
+<!-- ================= SCRIPTS ================= -->
+<script>
+/* Loader */
+function showLoader() {
+    document.getElementById("loader").style.display = "block";
+}
+
+/* Charts */
+const pieData = JSON.parse('{{ category_summary | tojson | safe }}');
+if (Object.keys(pieData).length) {
+    new Chart(document.getElementById("pieChart"), {
+        type: "pie",
+        data: {
+            labels: Object.keys(pieData),
+            datasets: [{
+                data: Object.values(pieData),
+                backgroundColor: ["#ff6384","#36a2eb","#ffce56","#4bc0c0","#9966ff"]
+            }]
+        }
+    });
+}
+
+const barData = JSON.parse('{{ monthly_summary | tojson | safe }}');
+if (Object.keys(barData).length) {
+    new Chart(document.getElementById("barChart"), {
+        type: "bar",
+        data: {
+            labels: Object.keys(barData),
+            datasets: [{
+                label: "Expenses (₹)",
+                data: Object.values(barData),
+                backgroundColor: "#36a2eb"
+            }]
+        }
+    });
+}
+
+/* Dark Mode */
+const toggle = document.getElementById("themeToggle");
+if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+    toggle.textContent = "☀️";
+}
+toggle.onclick = () => {
+    document.body.classList.toggle("dark");
+    const dark = document.body.classList.contains("dark");
+    localStorage.setItem("theme", dark ? "dark" : "light");
+    toggle.textContent = dark ? "☀️" : "🌙";
+};
+</script>
+
+</body>
+</html>

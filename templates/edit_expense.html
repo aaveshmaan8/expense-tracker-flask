@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Edit Expense | Expense Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="auth-container">
+    <div class="auth-card">
+
+        <h2>✏️ Edit Expense</h2>
+        <p class="auth-subtitle">Update your expense details</p>
+
+        <form method="POST">
+
+            <label>Category</label>
+            <input
+                type="text"
+                name="category"
+                value="{{ expense.category }}"
+                required
+            >
+
+            <label>Description</label>
+            <input
+                type="text"
+                name="description"
+                value="{{ expense.description }}"
+                required
+            >
+
+            <label>Amount (₹)</label>
+            <input
+                type="number"
+                name="amount"
+                value="{{ expense.amount }}"
+                step="0.01"
+                required
+            >
+
+            <button type="submit" class="auth-btn">
+                Update Expense
+            </button>
+        </form>
+
+        <div class="auth-footer">
+            <a href="{{ url_for('index') }}">⬅ Back to Dashboard</a>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
