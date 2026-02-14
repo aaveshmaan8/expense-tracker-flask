@@ -13,6 +13,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "expense-secret")
 DATABASE_URL = os.environ.get("DATABASE_URL")
 USE_POSTGRES = DATABASE_URL is not None
 
+
 # ================= DATABASE =================
 def get_db():
     if USE_POSTGRES:
@@ -25,8 +26,6 @@ def get_db():
         conn = sqlite3.connect("database.db")
         conn.row_factory = sqlite3.Row
         return conn
-
-
 
 
 def init_db():
@@ -183,7 +182,6 @@ def login():
         return redirect(url_for("index"))
 
     return render_template("login.html")
-
 
 
 # ================= EXPENSES =================
@@ -344,7 +342,6 @@ def export_csv():
     )
 
 
-
 @app.route("/logout")
 def logout():
     session.clear()
@@ -410,7 +407,6 @@ def index():
         key = str(e["date"])[:7]
         monthly_summary[key] = monthly_summary.get(key, 0) + float(e["amount"])
 
-    budget = None
     cur.close()
     conn.close()
 
@@ -424,11 +420,16 @@ def index():
         selected_year=year,
         start_date=start_date,
         end_date=end_date,
-        budget=budget
+        budget=None
     )
 
 
 # ================= MAIN =================
 if __name__ == "__main__":
-    init_db()
+    with app.app_context():
+        try:
+            init_db()
+        except Exception as e:
+            print("DB init error:", e)
+
     app.run(debug=True)
