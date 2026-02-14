@@ -3,6 +3,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 import psycopg2
 import psycopg2.extras
+import sqlite3
 import csv, io, os
 
 # ================= APP SETUP =================
@@ -10,53 +11,86 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "expense-secret")
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL is not set")
+USE_POSTGRES = DATABASE_URL is not None
 
 # ================= DATABASE =================
 def get_db():
-    return psycopg2.connect(
-        DATABASE_URL,
-        cursor_factory=psycopg2.extras.DictCursor
-    )
+    if USE_POSTGRES:
+        return psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=psycopg2.extras.DictCursor
+        )
+    else:
+        conn = sqlite3.connect("database.db")
+        conn.row_factory = sqlite3.Row
+        return conn
+
 
 def init_db():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            is_admin INTEGER DEFAULT 0
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS expenses (
-            id SERIAL PRIMARY KEY,
-            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            date DATE NOT NULL,
-            category TEXT NOT NULL,
-            description TEXT,
-            amount NUMERIC NOT NULL
-        )
-    """)
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS budgets (
-            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-            month TEXT NOT NULL,
-            year TEXT NOT NULL,
-            amount NUMERIC NOT NULL,
-            PRIMARY KEY (user_id, month, year)
-        )
-    """)
+    if USE_POSTGRES:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                is_admin INTEGER DEFAULT 0
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS expenses (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                date DATE NOT NULL,
+                category TEXT NOT NULL,
+                description TEXT,
+                amount NUMERIC NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS budgets (
+                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                month TEXT NOT NULL,
+                year TEXT NOT NULL,
+                amount NUMERIC NOT NULL,
+                PRIMARY KEY (user_id, month, year)
+            )
+        """)
+    else:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                is_admin INTEGER DEFAULT 0
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                date TEXT NOT NULL,
+                category TEXT NOT NULL,
+                description TEXT,
+                amount REAL NOT NULL
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS budgets (
+                user_id INTEGER,
+                month TEXT,
+                year TEXT,
+                amount REAL,
+                PRIMARY KEY (user_id, month, year)
+            )
+        """)
 
     conn.commit()
     cur.close()
     conn.close()
+
 
 # ================= DECORATORS =================
 def login_required(f):
@@ -67,6 +101,7 @@ def login_required(f):
             return redirect(url_for("login"))
         return f(*args, **kwargs)
     return wrapper
+
 
 # ================= AUTH =================
 @app.route("/register", methods=["GET", "POST"])
@@ -82,17 +117,29 @@ def register():
         conn = get_db()
         cur = conn.cursor()
 
-        cur.execute("SELECT id FROM users WHERE username=%s", (username,))
+        if USE_POSTGRES:
+            cur.execute("SELECT id FROM users WHERE username=%s", (username,))
+        else:
+            cur.execute("SELECT id FROM users WHERE username=?", (username,))
+
         if cur.fetchone():
             flash("Username already exists.", "error")
             cur.close()
             conn.close()
             return render_template("register.html")
 
-        cur.execute(
-            "INSERT INTO users (username, password) VALUES (%s, %s)",
-            (username, generate_password_hash(password))
-        )
+        hashed = generate_password_hash(password)
+
+        if USE_POSTGRES:
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (%s, %s)",
+                (username, hashed)
+            )
+        else:
+            cur.execute(
+                "INSERT INTO users (username, password) VALUES (?, ?)",
+                (username, hashed)
+            )
 
         conn.commit()
         cur.close()
@@ -103,6 +150,7 @@ def register():
 
     return render_template("register.html")
 
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -111,7 +159,12 @@ def login():
 
         conn = get_db()
         cur = conn.cursor()
-        cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+
+        if USE_POSTGRES:
+            cur.execute("SELECT * FROM users WHERE username=%s", (username,))
+        else:
+            cur.execute("SELECT * FROM users WHERE username=?", (username,))
+
         user = cur.fetchone()
         cur.close()
         conn.close()
@@ -128,10 +181,172 @@ def login():
 
     return render_template("login.html")
 
+
+
+# ================= EXPENSES =================
+@app.route("/add", methods=["GET", "POST"])
+@login_required
+def add_expense():
+    if request.method == "POST":
+        conn = get_db()
+        cur = conn.cursor()
+
+        if USE_POSTGRES:
+            cur.execute("""
+                INSERT INTO expenses (user_id, date, category, description, amount)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (
+                session["user_id"],
+                request.form["date"],
+                request.form["category"],
+                request.form["description"],
+                float(request.form["amount"])
+            ))
+        else:
+            cur.execute("""
+                INSERT INTO expenses (user_id, date, category, description, amount)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                session["user_id"],
+                request.form["date"],
+                request.form["category"],
+                request.form["description"],
+                float(request.form["amount"])
+            ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for("index"))
+
+    return render_template("add_expense.html")
+
+
+@app.route("/edit/<int:id>", methods=["GET", "POST"])
+@login_required
+def edit_expense(id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if USE_POSTGRES:
+        cur.execute(
+            "SELECT * FROM expenses WHERE id=%s AND user_id=%s",
+            (id, session["user_id"])
+        )
+    else:
+        cur.execute(
+            "SELECT * FROM expenses WHERE id=? AND user_id=?",
+            (id, session["user_id"])
+        )
+
+    expense = cur.fetchone()
+
+    if not expense:
+        cur.close()
+        conn.close()
+        return "Unauthorized", 403
+
+    if request.method == "POST":
+        if USE_POSTGRES:
+            cur.execute("""
+                UPDATE expenses
+                SET category=%s, description=%s, amount=%s
+                WHERE id=%s AND user_id=%s
+            """, (
+                request.form["category"],
+                request.form["description"],
+                float(request.form["amount"]),
+                id,
+                session["user_id"]
+            ))
+        else:
+            cur.execute("""
+                UPDATE expenses
+                SET category=?, description=?, amount=?
+                WHERE id=? AND user_id=?
+            """, (
+                request.form["category"],
+                request.form["description"],
+                float(request.form["amount"]),
+                id,
+                session["user_id"]
+            ))
+
+        conn.commit()
+        cur.close()
+        conn.close()
+        return redirect(url_for("index"))
+
+    cur.close()
+    conn.close()
+    return render_template("edit_expense.html", expense=expense)
+
+
+@app.route("/delete/<int:id>")
+@login_required
+def delete(id):
+    conn = get_db()
+    cur = conn.cursor()
+
+    if USE_POSTGRES:
+        cur.execute(
+            "DELETE FROM expenses WHERE id=%s AND user_id=%s",
+            (id, session["user_id"])
+        )
+    else:
+        cur.execute(
+            "DELETE FROM expenses WHERE id=? AND user_id=?",
+            (id, session["user_id"])
+        )
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for("index"))
+
+
+# ================= EXPORT =================
+@app.route("/export/csv")
+@login_required
+def export_csv():
+    conn = get_db()
+    cur = conn.cursor()
+
+    if USE_POSTGRES:
+        cur.execute(
+            "SELECT date, category, description, amount FROM expenses WHERE user_id=%s",
+            (session["user_id"],)
+        )
+    else:
+        cur.execute(
+            "SELECT date, category, description, amount FROM expenses WHERE user_id=?",
+            (session["user_id"],)
+        )
+
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Date", "Category", "Description", "Amount"])
+
+    for r in rows:
+        writer.writerow([r["date"], r["category"], r["description"], r["amount"]])
+
+    return Response(
+        output.getvalue(),
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=expenses.csv"}
+    )
+
+
+
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("login"))
+
 
 # ================= DASHBOARD =================
 @app.route("/")
@@ -142,27 +357,43 @@ def index():
     start_date = request.args.get("start_date")
     end_date = request.args.get("end_date")
 
-    query = "SELECT * FROM expenses WHERE user_id=%s"
+    if USE_POSTGRES:
+        query = "SELECT * FROM expenses WHERE user_id=%s"
+    else:
+        query = "SELECT * FROM expenses WHERE user_id=?"
+
     params = [session["user_id"]]
-
-    if month:
-        query += " AND TO_CHAR(date,'MM')=%s"
-        params.append(month)
-
-    if year:
-        query += " AND TO_CHAR(date,'YYYY')=%s"
-        params.append(year)
-
-    if start_date:
-        query += " AND date >= %s"
-        params.append(start_date)
-
-    if end_date:
-        query += " AND date <= %s"
-        params.append(end_date)
 
     conn = get_db()
     cur = conn.cursor()
+
+    if USE_POSTGRES:
+        if month:
+            query += " AND TO_CHAR(date,'MM')=%s"
+            params.append(month)
+        if year:
+            query += " AND TO_CHAR(date,'YYYY')=%s"
+            params.append(year)
+        if start_date:
+            query += " AND date >= %s"
+            params.append(start_date)
+        if end_date:
+            query += " AND date <= %s"
+            params.append(end_date)
+    else:
+        if month:
+            query += " AND substr(date,6,2)=?"
+            params.append(month)
+        if year:
+            query += " AND substr(date,1,4)=?"
+            params.append(year)
+        if start_date:
+            query += " AND date >= ?"
+            params.append(start_date)
+        if end_date:
+            query += " AND date <= ?"
+            params.append(end_date)
+
     cur.execute(query, params)
     expenses = cur.fetchall()
 
@@ -173,19 +404,10 @@ def index():
 
     for e in expenses:
         category_summary[e["category"]] = category_summary.get(e["category"], 0) + float(e["amount"])
-        key = e["date"].strftime("%Y-%m")
+        key = str(e["date"])[:7]
         monthly_summary[key] = monthly_summary.get(key, 0) + float(e["amount"])
 
     budget = None
-    if month and year:
-        cur.execute(
-            "SELECT amount FROM budgets WHERE user_id=%s AND month=%s AND year=%s",
-            (session["user_id"], month, year)
-        )
-        row = cur.fetchone()
-        if row:
-            budget = float(row["amount"])
-
     cur.close()
     conn.close()
 
@@ -202,112 +424,6 @@ def index():
         budget=budget
     )
 
-# ================= EXPENSES =================
-@app.route("/add", methods=["GET", "POST"])
-@login_required
-def add_expense():
-    if request.method == "POST":
-        conn = get_db()
-        cur = conn.cursor()
-
-        cur.execute("""
-            INSERT INTO expenses (user_id, date, category, description, amount)
-            VALUES (%s, %s, %s, %s, %s)
-        """, (
-            session["user_id"],
-            request.form["date"],
-            request.form["category"],
-            request.form["description"],
-            float(request.form["amount"])
-        ))
-
-        conn.commit()
-        cur.close()
-        conn.close()
-        return redirect(url_for("index"))
-
-    return render_template("add_expense.html")
-
-@app.route("/edit/<int:id>", methods=["GET", "POST"])
-@login_required
-def edit_expense(id):
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        "SELECT * FROM expenses WHERE id=%s AND user_id=%s",
-        (id, session["user_id"])
-    )
-    expense = cur.fetchone()
-
-    if not expense:
-        cur.close()
-        conn.close()
-        return "Unauthorized", 403
-
-    if request.method == "POST":
-        cur.execute("""
-            UPDATE expenses
-            SET category=%s, description=%s, amount=%s
-            WHERE id=%s AND user_id=%s
-        """, (
-            request.form["category"],
-            request.form["description"],
-            float(request.form["amount"]),
-            id,
-            session["user_id"]
-        ))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return redirect(url_for("index"))
-
-    cur.close()
-    conn.close()
-    return render_template("edit_expense.html", expense=expense)
-
-@app.route("/delete/<int:id>")
-@login_required
-def delete(id):
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        "DELETE FROM expenses WHERE id=%s AND user_id=%s",
-        (id, session["user_id"])
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
-    return redirect(url_for("index"))
-
-# ================= EXPORT =================
-@app.route("/export/csv")
-@login_required
-def export_csv():
-    conn = get_db()
-    cur = conn.cursor()
-
-    cur.execute(
-        "SELECT date, category, description, amount FROM expenses WHERE user_id=%s",
-        (session["user_id"],)
-    )
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(["Date", "Category", "Description", "Amount"])
-    for r in rows:
-        writer.writerow([r["date"], r["category"], r["description"], r["amount"]])
-
-    return Response(
-        output.getvalue(),
-        mimetype="text/csv",
-        headers={"Content-Disposition": "attachment; filename=expenses.csv"}
-    )
 
 # ================= MAIN =================
 if __name__ == "__main__":
