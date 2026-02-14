@@ -18,12 +18,15 @@ def get_db():
     if USE_POSTGRES:
         return psycopg2.connect(
             DATABASE_URL,
-            cursor_factory=psycopg2.extras.DictCursor
+            cursor_factory=psycopg2.extras.DictCursor,
+            sslmode="require"
         )
     else:
         conn = sqlite3.connect("database.db")
         conn.row_factory = sqlite3.Row
         return conn
+
+
 
 
 def init_db():
