@@ -386,7 +386,15 @@ def export_csv():
     )
 
 
-# ================= START =================
+# ================= INIT DB ON START =================
+with app.app_context():
+    try:
+        init_db()
+        print("Database initialized successfully.")
+    except Exception as e:
+        print("Database init error:", e)
+
+
+# ================= MAIN =================
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
